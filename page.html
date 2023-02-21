@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+		</style>
+	</head>
+	<body>
+        <script src="node_modules/three/build/three.js"></script>
+
+
+        <button onclick="connect()">Click me</button> 
+
+		<script>
+            if ("serial" in navigator) {
+                console.log("Your browser supports Web Serial API!");
+            }
+            else {
+                console.log("Your browser does not support Web Serial API, the latest version of Google Chrome is recommended!");
+            };
+            let port;  // Serial port object
+
+            // Rotations
+            var gx = 0;
+            var gy = 0;
+            var gz = 0;
+
+            class LineBreakTransformer {
+                constructor() {
+                    // A container for holding stream data until a new line.
+                    this.chunks = "";
+                }
+
+                transform(chunk, controller) {
+                    // Append new chunks to existing chunks.
+                    this.chunks += chunk;
+                    // For each line breaks in chunks, send the parsed lines out.
+                    const lines = this.chunks.split("\r\n");
+                    this.chunks = lines.pop();
+                    lines.forEach((line) => controller.enqueue(line));
+                }
+
+                flush(controller) {
+                    // When the stream is closed, flush any remaining chunks out.
+                    controller.enqueue(this.chunks);
+                }
+            }
+
+
+            async function connect() {
+                // Prompt user to select any serial port.
+                port = await navigator.serial.requestPort();
+                // Wait for the serial port to open.
+                await port.open({ baudRate: 9600 });
+                const textDecoder = new TextDecoderStream();
+                const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+                const reader = textDecoder.readable
+                .pipeThrough(new TransformStream(new LineBreakTransformer()))
+                .getReader();
+                console.log('Serial port opened:', port, reader);
+
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        console.log('Serial port closed');
+                        break;
+                    }
+                    console.log(value);
+                    gy = parseFloat(value);
+                }}
+
+
+            // Create a Scene
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color( 'white' );
+            // Add a Camera
+            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            document.body.appendChild( renderer.domElement );
+            
+            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            const material = new THREE.MeshBasicMaterial( { color: '#F55171' } );
+            const cube = new THREE.Mesh( geometry, material );
+            scene.add( cube );
+
+            camera.position.z = 5;
+
+            function animate() {
+                cube.rotation.x = gx;
+                cube.rotation.y = gy;
+                cube.rotation.z = gz;
+                requestAnimationFrame( animate );
+                renderer.render( scene, camera );
+            }
+            animate();
+		</script>
+	</body>
+</html>
