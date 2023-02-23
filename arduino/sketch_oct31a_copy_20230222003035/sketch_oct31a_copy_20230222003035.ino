@@ -42,6 +42,6 @@ void loop() {
 
   // Send position and rotation data over serial port
   String gyro_str = String(gx) + "," + String(gy) + "," + String(gz);
-  Serial.println(String(gx));
+  Serial.println(gyro_str);
 
 }

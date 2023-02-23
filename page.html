@@ -68,8 +68,11 @@
                         console.log('Serial port closed');
                         break;
                     }
-                    console.log(value);
-                    gy = parseFloat(value);
+                    const value_ =  value.split(',');
+                    console.log(value_);
+                    gx = parseFloat(value_[0]);
+                    gy = parseFloat(value_[1]);
+                    gz = parseFloat(value_[2]);
                 }}
 
 
